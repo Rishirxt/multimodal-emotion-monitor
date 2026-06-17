@@ -1,14 +1,17 @@
-# Virtual Environment
 venv/
-.venv/
+backend/venv/
 
-# Python
 __pycache__/
-*.pyc
-*.pyo
+.ipynb_checkpoints/
 
-# VS Code
-.vscode/
+models/
+datasets/
 
-# MacOS
-.DS_Store
+*.pkl
+*.joblib
+
+results/
+logs/
+outputs/
+
+*.csv
