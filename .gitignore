@@ -12,3 +12,10 @@ __pycache__/
 
 # MacOS
 .DS_Store
+
+# Data and Outputs
+**/Custom_Data/
+**/explore_output/
+**/step2_output/
+*.pt
+*.pth

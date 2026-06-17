@@ -1,3 +1,5 @@
 opencv-python
-mediapipe
 numpy
+torch
+torchvision
+matplotlib
