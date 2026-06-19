@@ -17,5 +17,9 @@ __pycache__/
 **/Custom_Data/
 **/explore_output/
 **/step2_output/
-*.pt
+step3_output/
+step4_output/
+venv/
+__pycache__/
+*.pyc*.pt
 *.pth
