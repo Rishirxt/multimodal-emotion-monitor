@@ -16,12 +16,12 @@ import argparse
 import time
 import cv2
 import numpy as np
-import torch
+import torchls
 import torch.nn as nn
 from torchvision import models
 
 # ── constants (must match training) ──────────────────────────────────────────
-IMG_SIZE    = 224
+IMG_SIZE    = 224   
 GRID_SIZE   = 7
 ANCHORS     = [(0.15, 0.20), (0.45, 0.60)]
 NUM_ANCHORS = len(ANCHORS)
