@@ -1,88 +1,271 @@
 from emotion import detect_emotion
-
 from intent import detect_intent
-
 from depression import detect_depression
-
-from state_tracker import StateTracker
-
-from question_engine import QuestionEngine
-
 from suicide import SuicideDetector
 
-tracker = StateTracker()
+from state_tracker import StateTracker
+from phq_tracker import PHQTracker
+from conversation_manager import ConversationManager
+from clinical_reasoning_engine import ClinicalReasoningEngine
+from llm_question_engine import LLMQuestionEngine
 
-engine = QuestionEngine()
+
+# ==========================================================
+# Initialize Components
+# ==========================================================
+
+state_tracker = StateTracker()
+
+phq_tracker = PHQTracker()
+
+conversation_manager = ConversationManager()
+
+reasoning_engine = ClinicalReasoningEngine()
+
+llm_engine = LLMQuestionEngine()
 
 suicide_detector = SuicideDetector()
 
+
+# ==========================================================
+# Main Pipeline
+# ==========================================================
+
 def process_message(text):
 
-    emotion_result = detect_emotion(
-        text
-    )
+    # =====================================================
+    # NLP Analysis
+    # =====================================================
 
-    intent_result = detect_intent(
-        text
-    )
+    emotion = detect_emotion(text)
 
-    depression_result = detect_depression(
-        text
-    )
-    
-    suicide_result = suicide_detector.assess_risk(
+    intent = detect_intent(text)
 
-    text=text,
+    depression = detect_depression(text)
 
-    emotion=
-        emotion_result["emotion"],
-
-    intent=
-        intent_result["intent"],
-
-    depression_risk=
-        depression_result["depression_risk"]
-    )
-
-    state = tracker.update_state(
+    suicide = suicide_detector.assess_risk(
 
         text=text,
 
-        emotion=
-            emotion_result["emotion"],
+        emotion=emotion["emotion"],
 
-        intent=
-            intent_result["intent"],
+        intent=intent["intent"],
 
-        depression_risk=
-            depression_result["depression_risk"]
+        depression_risk=depression["depression_risk"]
+
     )
 
-    next_question = engine.get_next_question(
-        state
+    # =====================================================
+    # Conversation State
+    # =====================================================
+
+    state = state_tracker.update_state(
+
+        text=text,
+
+        emotion=emotion["emotion"],
+
+        intent=intent["intent"],
+
+        depression_risk=depression["depression_risk"],
+
+        suicide_risk_level=suicide["suicide_risk_level"]
+
     )
+
+    analysis = state["analysis"]
+
+    history = state["conversation"]["history"]
+
+    turn = state["conversation"]["turn"]
+
+    # =====================================================
+    # Conversation Manager
+    # =====================================================
+
+    conversation_manager.start_new_turn()
+
+    conversation_manager.update_stage(
+
+        phq_tracker.get_covered_domains()
+
+    )
+
+    conversation = {
+
+    **conversation_manager.get_state(),
+
+    "history": history
+
+}
+
+    # =====================================================
+    # Temporary Assessment
+    # =====================================================
+
+    assessment = {
+
+        "covered_domains":
+
+            phq_tracker.get_covered_domains(),
+
+        "remaining_domains":
+
+            phq_tracker.get_remaining_domains(),
+
+        "current_domain":
+
+            conversation["current_domain"]
+
+    }
+
+    # =====================================================
+    # Clinical Reasoning
+    # =====================================================
+
+    context = {
+
+        "analysis": analysis,
+
+        "conversation": conversation,
+
+        "assessment": assessment
+
+    }
+    print(conversation)
+
+    reasoning = reasoning_engine.decide(
+
+        context
+
+    )
+
+    # =====================================================
+    # Apply Reasoning
+    # =====================================================
+
+    if reasoning["target_domain"] is not None:
+
+        conversation_manager.set_current_domain(
+
+            reasoning["target_domain"]
+
+        )
+
+        phq_tracker.update(
+
+            domain=reasoning["target_domain"],
+
+            turn=turn
+
+        )
+
+    #conversation = conversation_manager.get_state()
+    
+    conversation = {
+
+    **conversation_manager.get_state(),
+
+    "history": history
+
+    }
+
+    covered_domains = phq_tracker.get_covered_domains()
+
+    remaining_domains = phq_tracker.get_remaining_domains()
+
+    # update stage again after PHQ changes
+
+    conversation_manager.update_stage(
+
+        covered_domains
+
+    )
+
+    conversation = {
+
+    **conversation_manager.get_state(),
+
+    "history": history
+
+}
+
+    assessment = {
+
+        "covered_domains": covered_domains,
+
+        "remaining_domains": remaining_domains,
+
+        "current_domain": conversation["current_domain"]
+
+    }
+
+    context["conversation"] = conversation
+
+    context["assessment"] = assessment
+
+    context["reasoning"] = reasoning
+
+    # =====================================================
+    # Generate Question
+    # =====================================================
+
+    question = llm_engine.generate_question(
+
+        reasoning,
+
+        analysis,
+
+        history
+
+    )
+
+    conversation_manager.question_asked()
+
+    state_tracker.save_assistant_question(
+
+        question
+
+    )
+
+    # =====================================================
+    # Final Response
+    # =====================================================
 
     return {
 
-        "emotion":
-            emotion_result,
+        "analysis": {
 
-        "intent":
-            intent_result,
+            "emotion": emotion,
 
-        "depression":
-            depression_result,
-            
-        "suicide":
-            suicide_result,
+            "intent": intent,
 
-        "state":
-            state,
+            "depression": depression,
 
-        "next_question":
-            next_question
+            "suicide": suicide,
+
+            "severity": analysis["severity"]
+
+        },
+
+        "assessment": assessment,
+
+        "conversation": conversation_manager.get_state(),
+
+        "reasoning": reasoning,
+
+        "assistant": {
+
+            "question": question
+
+        }
+
     }
 
+
+# ==========================================================
+# Testing
+# ==========================================================
 
 if __name__ == "__main__":
 
@@ -95,22 +278,29 @@ if __name__ == "__main__":
         "I am worried about my exams and future.",
 
         "I don't see any purpose in life anymore.",
-        
+
         "I want to kill myself."
+
     ]
+
+    from pprint import pprint
 
     for text in samples:
 
-        print("\n" + "=" * 80)
+        print()
 
-        print("\nUSER:")
+        print("=" * 80)
+
+        print()
+
+        print("USER:")
 
         print(text)
 
-        result = process_message(
-            text
-        )
+        print()
 
-        print("\nPIPELINE OUTPUT:")
+        result = process_message(text)
 
-        print(result)
+        print("PIPELINE OUTPUT:")
+
+        pprint(result)

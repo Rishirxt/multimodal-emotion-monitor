@@ -1,5 +1,39 @@
 class SeverityEngine:
 
+    """
+    Estimates overall symptom severity.
+
+    This is NOT a diagnostic model.
+
+    It combines:
+    - Depression model confidence
+    - Emotion
+    - Intent
+    - Conversation history
+    """
+
+    NEGATIVE_INTENTS = {
+
+        "sleep_issue",
+
+        "loneliness",
+
+        "hopelessness",
+
+        "general_depression",
+
+        "self_harm"
+
+    }
+
+    NEGATIVE_EMOTIONS = {
+
+        "sadness",
+
+        "fear"
+
+    }
+
     def calculate_severity(
 
         self,
@@ -11,101 +45,117 @@ class SeverityEngine:
         depression_risk,
 
         history
+
     ):
 
         score = 0
 
-        # --------------------
-        # Depression Risk Score
-        # --------------------
+        # ----------------------------------
+        # Depression Risk
+        # ----------------------------------
 
-        if depression_risk >= 0.8:
+        if depression_risk >= 0.90:
+
+            score += 4
+
+        elif depression_risk >= 0.75:
 
             score += 3
 
-        elif depression_risk >= 0.5:
+        elif depression_risk >= 0.50:
 
             score += 2
 
-        elif depression_risk >= 0.2:
+        elif depression_risk >= 0.20:
 
             score += 1
 
-        # --------------------
-        # Emotion Score
-        # --------------------
+        # ----------------------------------
+        # Current Emotion
+        # ----------------------------------
 
-        if emotion in [
-
-            "sadness",
-
-            "fear"
-        ]:
+        if emotion in self.NEGATIVE_EMOTIONS:
 
             score += 1
 
-        # --------------------
-        # Intent Score
-        # --------------------
+        # ----------------------------------
+        # Current Intent
+        # ----------------------------------
 
-        if intent in [
-
-            "sleep_issue",
-
-            "loneliness",
-
-            "hopelessness",
-
-            "general_depression"
-        ]:
+        if intent in self.NEGATIVE_INTENTS:
 
             score += 1
 
-        # --------------------
+        if intent == "self_harm":
+
+            score += 2
+
+        # ----------------------------------
         # Conversation History
-        # --------------------
+        # ----------------------------------
 
-        negative_count = 0
+        negative_history = 0
 
         for item in history:
 
-            if item["intent"] in [
+            analysis = item.get("analysis", {})
 
-                "sleep_issue",
+            hist_intent = analysis.get("intent")
 
-                "loneliness",
+            if hist_intent in self.NEGATIVE_INTENTS:
 
-                "hopelessness",
+                negative_history += 1
 
-                "general_depression"
-            ]:
-
-                negative_count += 1
-
-        if negative_count >= 3:
+        if negative_history >= 3:
 
             score += 1
 
-        # --------------------
-        # Final Severity
-        # --------------------
+        elif negative_history >= 6:
 
-        if score >= 5:
+            score += 2
+
+        # ----------------------------------
+        # Final Severity
+        # ----------------------------------
+
+        if score >= 7:
 
             return "high"
 
-        elif score >= 2:
+        elif score >= 3:
 
             return "moderate"
 
-        else:
-
-            return "low"
+        return "low"
 
 
 if __name__ == "__main__":
 
     engine = SeverityEngine()
+
+    history = [
+
+        {
+
+            "analysis": {
+
+                "intent": "sleep_issue"
+
+            }
+
+        },
+
+        {
+
+            "analysis": {
+
+                "intent": "loneliness"
+
+            }
+
+        }
+
+    ]
 
     severity = engine.calculate_severity(
 
@@ -113,14 +163,10 @@ if __name__ == "__main__":
 
         intent="sleep_issue",
 
-        depression_risk=0.02,
+        depression_risk=0.72,
 
-        history=[
-            {
-                "intent":
-                "sleep_issue"
-            }
-        ]
+        history=history
+
     )
 
     print(severity)

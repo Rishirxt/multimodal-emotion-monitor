@@ -3,9 +3,16 @@ from severity_engine import SeverityEngine
 
 class StateTracker:
 
+    """
+    Maintains the conversation history and analysis state.
+
+    This class DOES NOT make interview decisions.
+    It simply stores information collected so far.
+    """
+
     def __init__(self):
 
-        self.conversation_stage = 1
+        self.turn = 0
 
         self.history = []
 
@@ -21,24 +28,13 @@ class StateTracker:
 
         intent,
 
-        depression_risk
+        depression_risk,
+
+        suicide_risk_level="low"
+
     ):
 
-        self.history.append({
-
-            "text": text,
-
-            "emotion": emotion,
-
-            "intent": intent,
-
-            "depression_risk":
-                round(depression_risk, 4)
-        })
-
-        if len(self.history) > 10:
-
-            self.history.pop(0)
+        self.turn += 1
 
         severity = self.severity_engine.calculate_severity(
 
@@ -49,6 +45,7 @@ class StateTracker:
             depression_risk,
 
             self.history
+
         )
 
         if intent == "self_harm":
@@ -63,59 +60,101 @@ class StateTracker:
 
             risk_level = "low"
 
-        return {
+        analysis = {
 
             "emotion": emotion,
 
             "intent": intent,
 
-            "depression_risk":
-                round(depression_risk, 4),
+            "depression_risk": round(
+                depression_risk,
+                4
+            ),
 
             "severity": severity,
 
             "risk_level": risk_level,
 
-            "conversation_stage":
-                self.conversation_stage,
-
-            "history":
-                self.history
+            "suicide_risk_level": suicide_risk_level
         }
+
+        history_item = {
+
+            "turn": self.turn,
+
+            "user_message": text,
+
+            "analysis": analysis.copy(),
+
+            "assistant_question": None
+
+        }
+
+        self.history.append(
+
+            history_item
+
+        )
+
+        if len(self.history) > 20:
+
+            self.history.pop(0)
+
+        state = {
+
+            "analysis": analysis,
+
+            "conversation": {
+
+                "turn": self.turn,
+
+                "history": self.history
+
+            }
+
+        }
+
+        return state
+
+    def save_assistant_question(
+
+        self,
+
+        question
+
+    ):
+
+        if self.history:
+
+            self.history[-1][
+
+                "assistant_question"
+
+            ] = question
 
 
 if __name__ == "__main__":
 
     tracker = StateTracker()
 
-    messages = [
+    state = tracker.update_state(
 
-        (
-            "I can't sleep at night",
-            "sadness",
-            "sleep_issue",
-            0.91
-        ),
+        text="I can't sleep.",
 
-        (
-            "I feel exhausted all the time",
-            "sadness",
-            "general_depression",
-            0.94
-        )
-    ]
+        emotion="sadness",
 
-    for msg in messages:
+        intent="sleep_issue",
 
-        state = tracker.update_state(
+        depression_risk=0.82
 
-            text=msg[0],
+    )
 
-            emotion=msg[1],
+    tracker.save_assistant_question(
 
-            intent=msg[2],
+        "How long have you been having trouble sleeping?"
 
-            depression_risk=msg[3]
-        )
+    )
 
-    print(state)
+    from pprint import pprint
+
+    pprint(state)
