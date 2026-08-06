@@ -1,5 +1,12 @@
-opencv-python
-numpy
+# Core deep learning
 torch
 torchvision
+
+# Computer vision
+opencv-python
+
+# Numerical computing
+numpy
+
+# Plotting / visualization (used in some model scripts)
 matplotlib

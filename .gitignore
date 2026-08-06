@@ -1,7 +1,7 @@
 # Virtual Environment
 venv/
 .venv/
-
+data/
 # Python
 __pycache__/
 *.pyc
@@ -17,5 +17,10 @@ __pycache__/
 **/Custom_Data/
 **/explore_output/
 **/step2_output/
-*.pt
+**/step3_output/
+**/step4_output/
+**/EmotionData/
+venv/
+__pycache__/
+*.pyc*.pt
 *.pth
