@@ -1,17 +1,34 @@
 venv/
 backend/venv/
-
+.venv/
+data/
+# Python
 __pycache__/
 .ipynb_checkpoints/
 
 models/
 datasets/
 
+# Python artifacts
 *.pkl
 *.joblib
+*.pyc
+*.pth
+*.pt
 
+# Results and outputs
 results/
 logs/
 outputs/
-
 *.csv
+
+# MacOS
+.DS_Store
+
+# Data and Outputs
+**/Custom_Data/
+**/explore_output/
+**/step2_output/
+**/step3_output/
+**/step4_output/
+**/EmotionData/
