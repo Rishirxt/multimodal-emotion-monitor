@@ -1,14 +1,26 @@
-# Virtual Environment
 venv/
+backend/venv/
 .venv/
 data/
 # Python
 __pycache__/
-*.pyc
-*.pyo
+.ipynb_checkpoints/
 
-# VS Code
-.vscode/
+models/
+datasets/
+
+# Python artifacts
+*.pkl
+*.joblib
+*.pyc
+*.pth
+*.pt
+
+# Results and outputs
+results/
+logs/
+outputs/
+*.csv
 
 # MacOS
 .DS_Store
@@ -20,7 +32,3 @@ __pycache__/
 **/step3_output/
 **/step4_output/
 **/EmotionData/
-venv/
-__pycache__/
-*.pyc*.pt
-*.pth
