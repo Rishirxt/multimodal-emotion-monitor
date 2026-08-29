@@ -1,0 +1,6 @@
+interface:
+  display_name: "Multimodal Emotion Monitor"
+  short_description: "Repo-specific patterns and workflows for multimodal-emotion-monitor"
+  default_prompt: "Use the multimodal-emotion-monitor repo skill to follow existing architecture, testing, and workflow conventions."
+policy:
+  allow_implicit_invocation: true
